@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>TASK BOARD by Kevs World</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f5f7fb;
+      --surface: #fff;
+      --surface-muted: #f1f4f9;
+      --text: #182230;
+      --muted: #748094;
+      --line: #e5eaf1;
+      --accent: #6258e8;
+      --accent-hover: #5147d4;
+      --accent-soft: #eeedff;
+      --danger: #c43f52;
+      --shadow: 0 18px 50px rgba(28, 39, 68, .10);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background: var(--page);
+    }
+
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(98, 88, 232, .25);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 252px minmax(0, 1fr);
+      min-height: 100vh;
+      max-width: 1440px;
+      margin: 0 auto;
+      background: var(--page);
+      box-shadow: 0 0 80px rgba(38, 48, 73, .06);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      padding: 32px 18px 22px;
+      border-right: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border-radius: 13px;
+      color: #fff;
+      background: var(--accent);
+      font-size: 21px;
+      font-weight: 800;
+      box-shadow: 0 7px 16px rgba(98, 88, 232, .24);
+    }
+
+    .brand h1 {
+      overflow: hidden;
+      margin: 0;
+      font-size: 16px;
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 10px 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .folder-list { display: grid; gap: 5px; }
+
+    .folder-button, .new-folder-button {
+      display: flex;
+      width: 100%;
+      min-height: 42px;
+      align-items: center;
+      gap: 11px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 10px;
+      color: #596579;
+      background: transparent;
+      text-align: left;
+      transition: background .16s ease, color .16s ease;
+    }
+
+    .folder-button:hover, .new-folder-button:hover { background: var(--surface-muted); }
+    .folder-button[aria-current="page"] {
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-weight: 700;
+    }
+
+    .folder-icon { width: 19px; font-size: 17px; text-align: center; }
+    .folder-name { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
+    .folder-count { color: var(--muted); font-size: 12px; }
+    .new-folder-button { color: var(--accent); font-weight: 650; }
+
+    .sidebar-footer {
+      display: grid;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .utility-button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border: 0;
+      border-radius: 10px;
+      color: #596579;
+      background: transparent;
+      text-align: left;
+    }
+
+    .utility-button:hover { color: var(--text); background: var(--surface-muted); }
+    .utility-icon { width: 19px; text-align: center; }
+
+    .main {
+      min-width: 0;
+      padding: 48px clamp(22px, 6vw, 88px) 56px;
+    }
+
+    .main-inner { width: min(100%, 790px); margin: 0 auto; }
+
+    .topline {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .topline h2 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 38px);
+      letter-spacing: -.045em;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .task-summary { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+
+    .search-wrap {
+      position: relative;
+      width: min(250px, 38%);
+      flex: 0 0 auto;
+    }
+
+    .search-icon {
+      position: absolute;
+      top: 50%;
+      left: 13px;
+      color: var(--muted);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .search-input, .task-input, .description-input, .dialog-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .search-input { height: 43px; padding: 0 13px 0 38px; font-size: 13px; }
+    .search-input:focus, .task-input:focus, .description-input:focus, .dialog-input:focus {
+      border-color: var(--accent);
+      outline: 0;
+      box-shadow: 0 0 0 3px rgba(98, 88, 232, .12);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .filters {
+      display: inline-flex;
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #fbfcfe;
+    }
+
+    .filter-button {
+      padding: 8px 13px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .filter-button[aria-pressed="true"] {
+      color: var(--accent);
+      background: var(--surface);
+      box-shadow: 0 1px 5px rgba(24, 34, 48, .1);
+    }
+
+    .task-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .task-card {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 13px;
+      min-height: 74px;
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--surface);
+      box-shadow: 0 2px 6px rgba(24, 34, 48, .025);
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+
+    .task-card:hover {
+      border-color: #d6d9f6;
+      box-shadow: 0 7px 20px rgba(24, 34, 48, .06);
+      transform: translateY(-1px);
+    }
+
+    .task-check {
+      width: 19px;
+      height: 19px;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .task-content { min-width: 0; }
+    .task-title {
+      overflow-wrap: anywhere;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.45;
+    }
+
+    .task-description-preview {
+      overflow: hidden;
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-card.is-complete .task-title {
+      color: #9aa3b1;
+      text-decoration: line-through;
+    }
+
+    .task-actions { display: flex; align-items: center; gap: 3px; }
+    .icon-button {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 0;
+      border-radius: 9px;
+      color: #788397;
+      background: transparent;
+      font-size: 16px;
+    }
+
+    .icon-button:hover { color: var(--accent); background: var(--accent-soft); }
+    .icon-button.delete:hover { color: var(--danger); background: #fff0f2; }
+
+    .empty-state {
+      padding: 58px 18px;
+      border: 1px dashed #dce2ec;
+      border-radius: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-icon { margin-bottom: 10px; font-size: 30px; }
+    .empty-state h3 { margin: 0 0 6px; color: var(--text); font-size: 16px; }
+    .empty-state p { margin: 0; font-size: 13px; }
+
+    .composer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      margin-top: 20px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfcfe;
+    }
+
+    .composer-fields { display: grid; gap: 8px; min-width: 0; }
+    .task-input { height: 40px; padding: 0 11px; font-size: 14px; }
+    .description-input { min-height: 38px; max-height: 120px; padding: 9px 11px; resize: vertical; font-size: 13px; }
+
+    .primary-button {
+      align-self: end;
+      min-height: 42px;
+      padding: 0 17px;
+      border: 0;
+      border-radius: 10px;
+      color: white;
+      background: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      transition: background .16s ease, transform .16s ease;
+    }
+
+    .primary-button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .primary-button:disabled { cursor: not-allowed; opacity: .6; }
+
+    .toast {
+      position: fixed;
+      z-index: 5;
+      right: 22px;
+      bottom: 22px;
+      max-width: min(420px, calc(100vw - 44px));
+      padding: 12px 16px;
+      border-radius: 10px;
+      color: white;
+      background: #263248;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+    }
+
+    dialog {
+      width: min(440px, calc(100vw - 32px));
+      max-height: min(80vh, 640px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: var(--text);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    dialog::backdrop { background: rgba(22, 30, 48, .42); backdrop-filter: blur(3px); }
+    .dialog-content { padding: 24px; }
+    .dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 19px; }
+    .dialog-header h2 { margin: 0; font-size: 20px; letter-spacing: -.025em; }
+    .dialog-header p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .dialog-input { height: 43px; margin-bottom: 12px; padding: 0 12px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 19px; }
+    .secondary-button, .danger-button {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: #596579;
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .danger-button { border-color: #f3d4d9; color: var(--danger); background: #fff7f8; }
+    .theme-list { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 18px; }
+    .theme-button {
+      width: 38px;
+      height: 38px;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px var(--line);
+    }
+
+    .theme-button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+    .theme-lavender { background: #f5f7fb; }
+    .theme-rose { background: #fff0f1; }
+    .theme-sun { background: #fff8df; }
+    .theme-mint { background: #e8f7f1; }
+    .theme-sky { background: #eaf3ff; }
+    .theme-lilac { background: #f3edff; }
+    .description-copy { margin: 0; overflow-wrap: anywhere; color: #596579; line-height: 1.7; white-space: pre-wrap; }
+    .field-label { display: block; margin: 0 0 8px; color: #596579; font-size: 13px; font-weight: 650; }
+
+    @media (max-width: 720px) {
+      .app-shell { display: block; }
+      .sidebar {
+        position: sticky;
+        z-index: 2;
+        top: 0;
+        display: block;
+        padding: 12px 16px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        background: rgba(251, 252, 254, .96);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand { padding: 0; }
+      .brand-mark { width: 36px; height: 36px; }
+      .brand p { display: none; }
+      .folder-section { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+      .section-label { flex: 0 0 auto; margin: 0; font-size: 10px; }
+      .folder-list { display: flex; min-width: 0; gap: 5px; overflow-x: auto; }
+      .folder-button, .new-folder-button { width: auto; min-height: 34px; flex: 0 0 auto; padding: 0 10px; font-size: 12px; }
+      .folder-count { display: none; }
+      .sidebar-footer { display: flex; flex-direction: row; gap: 4px; margin-top: 9px; }
+      .utility-button { min-height: 32px; padding: 0 8px; font-size: 12px; }
+      .main { padding: 30px 18px 42px; }
+      .topline { display: block; margin-bottom: 24px; }
+      .search-wrap { display: block; width: 100%; margin-top: 17px; }
+    }
+
+    @media (max-width: 430px) {
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .filters { width: 100%; }
+      .filter-button { flex: 1; padding-inline: 8px; }
+      .task-card { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 9px; padding: 12px; }
+      .task-actions { gap: 0; }
+      .icon-button { width: 30px; }
+      .composer { grid-template-columns: 1fr; }
+      .primary-button { justify-self: end; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Task lists">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">✓</div>
+        <div>
+          <h1 id="brand-title">TASK BOARD</h1>
+          <p>Make today count</p>
+        </div>
+      </div>
+
+      <section class="folder-section" aria-labelledby="folder-heading">
+        <h2 class="section-label" id="folder-heading">Your lists</h2>
+        <nav class="folder-list" id="folder-list" aria-label="Folders"></nav>
+      </section>
+
+      <div class="sidebar-footer">
+        <button class="utility-button" id="settings-open" type="button">
+          <span class="utility-icon" aria-hidden="true">⚙</span> Appearance & settings
+        </button>
+        <button class="utility-button" id="clear-open" type="button">
+          <span class="utility-icon" aria-hidden="true">⌫</span> Clear saved data
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-inner">
+        <header class="topline">
+          <div>
+            <p class="eyebrow">Your workspace</p>
+            <h2 id="list-title">To Do</h2>
+            <p class="task-summary" id="task-summary" aria-live="polite"></p>
+          </div>
+          <label class="search-wrap">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input class="search-input" id="search-input" type="search" placeholder="Search tasks" aria-label="Search tasks">
+          </label>
+        </header>
+
+        <section aria-label="Tasks">
+          <div class="toolbar">
+            <div class="filters" role="group" aria-label="Filter tasks">
+              <button class="filter-button" type="button" data-filter="all" aria-pressed="true">All</button>
+              <button class="filter-button" type="button" data-filter="active" aria-pressed="false">Active</button>
+              <button class="filter-button" type="button" data-filter="completed" aria-pressed="false">Completed</button>
+            </div>
+          </div>
+          <ul class="task-list" id="task-list"></ul>
+          <div class="empty-state" id="empty-state" hidden>
+            <div class="empty-icon" aria-hidden="true">✦</div>
+            <h3 id="empty-title">A clear start</h3>
+            <p id="empty-copy">Add a task below to get things moving.</p>
+          </div>
+        </section>
+
+        <form class="composer" id="task-form">
+          <div class="composer-fields">
+            <input class="task-input" id="task-title-input" name="title" type="text" maxlength="180" placeholder="What needs to get done?" aria-label="Task title" required>
+            <textarea class="description-input" id="task-description-input" name="description" rows="1" maxlength="1200" placeholder="Add a note (optional)" aria-label="Task description"></textarea>
+          </div>
+          <button class="primary-button" type="submit">＋ Add task</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="folder-dialog">
+    <form class="dialog-content" id="folder-form">
+      <div class="dialog-header">
+        <div><h2>Create a list</h2><p>Keep related tasks together.</p></div>
+        <button class="icon-button" type="button" data-close="folder-dialog" aria-label="Close">×</button>
+      </div>
+      <label class="field-label" for="folder-name-input">List name</label>
+      <input class="dialog-input" id="folder-name-input" maxlength="50" placeholder="For example, Work" required>
+      <div class="dialog-actions">
+        <button class="secondary-button" type="button" data-close="folder-dialog">Cancel</button>
+        <button class="primary-button" type="submit">Create list</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog">
+    <form class="dialog-content" id="settings-form">
+      <div class="dialog-header">
+        <div><h2>Background settings</h2><p>Make your workspace feel like yours.</p></div>
+        <button class="icon-button" type="button" data-close="settings-dialog" aria-label="Close">×</button>
+      </div>
+      
+
+      <span class="field-label">Background color</span>
+      <div class="theme-list" id="theme-list" role="group" aria-label="Background color">
+        <button class="theme-button theme-lavender" type="button" data-theme="#f5f7fb" aria-label="Lavender gray"></button>
+        <button class="theme-button theme-rose" type="button" data-theme="#fff0f1" aria-label="Rose"></button>
+        <button class="theme-button theme-sun" type="button" data-theme="#fff8df" aria-label="Sunshine"></button>
+        <button class="theme-button theme-mint" type="button" data-theme="#e8f7f1" aria-label="Mint"></button>
+        <button class="theme-button theme-sky" type="button" data-theme="#eaf3ff" aria-label="Sky"></button>
+        <button class="theme-button theme-lilac" type="button" data-theme="#f3edff" aria-label="Lilac"></button>
+      </div>
+      <div class="dialog-actions">
+        <button class="secondary-button" type="button" data-close="settings-dialog">Close</button>
+        <button class="primary-button" type="submit">Save settings</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="description-dialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <div><h2 id="description-title">Task details</h2><p>Notes for this task</p></div>
+        <button class="icon-button" type="button" data-close="description-dialog" aria-label="Close">×</button>
+      </div>
+      <p class="description-copy" id="description-copy"></p>
+    </div>
+  </dialog>
+
+  <dialog id="clear-dialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <div><h2>Clear this app's data?</h2><p>Your lists and tasks saved in this browser will be removed. Other website data will not be affected.</p></div>
+      </div>
+      <div class="dialog-actions">
+        <button class="secondary-button" type="button" data-close="clear-dialog">Cancel</button>
+        <button class="danger-button" id="clear-confirm" type="button">Clear data</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "todoApp";
+      const DEFAULT_THEME = "#f5f7fb";
+      const state = {
+        appData: { background: DEFAULT_THEME, appTitle: "To Do List", folders: [] },
+        currentFolderId: "",
+        filter: "all",
+        search: ""
+      };
+
+      const elements = {
+        brandTitle: document.getElementById("brand-title"),
+        listTitle: document.getElementById("list-title"),
+        summary: document.getElementById("task-summary"),
+        folderList: document.getElementById("folder-list"),
+        taskList: document.getElementById("task-list"),
+        emptyState: document.getElementById("empty-state"),
+        emptyTitle: document.getElementById("empty-title"),
+        emptyCopy: document.getElementById("empty-copy"),
+        search: document.getElementById("search-input"),
+        taskForm: document.getElementById("task-form"),
+        taskTitle: document.getElementById("task-title-input"),
+        taskDescription: document.getElementById("task-description-input"),
+        folderDialog: document.getElementById("folder-dialog"),
+        folderForm: document.getElementById("folder-form"),
+        folderName: document.getElementById("folder-name-input"),
+        settingsDialog: document.getElementById("settings-dialog"),
+        settingsForm: document.getElementById("settings-form"),
+        descriptionDialog: document.getElementById("description-dialog"),
+        descriptionTitle: document.getElementById("description-title"),
+        descriptionCopy: document.getElementById("description-copy"),
+        clearDialog: document.getElementById("clear-dialog"),
+        toast: document.getElementById("toast")
+      };
+
+      let toastTimer;
+
+      function makeId() {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
+        }
+        return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+      }
+
+      function normalizeData(raw) {
+        const source = raw && typeof raw === "object" ? raw : {};
+        const folders = Array.isArray(source.folders) ? source.folders : [];
+        const normalizedFolders = [];
+
+        folders.forEach((folder) => {
+          if (!folder || typeof folder.name !== "string" || !folder.name.trim()) return;
+          const name = folder.name.trim();
+          if (normalizedFolders.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) return;
+          const tasks = Array.isArray(folder.tasks) ? folder.tasks : [];
+          normalizedFolders.push({
+            id: typeof folder.id === "string" && folder.id ? folder.id : makeId(),
+            name,
+            tasks: tasks.filter((task) => task && typeof task.title === "string").map((task) => ({
+              id: typeof task.id === "string" && task.id ? task.id : makeId(),
+              title: task.title,
+              description: typeof task.description === "string" ? task.description : "",
+              checked: Boolean(task.checked)
+            }))
+          });
+        });
+
+        let defaultFolder = normalizedFolders.find((folder) => folder.name.toLocaleLowerCase() === "to do");
+        if (!defaultFolder) {
+          defaultFolder = { id: makeId(), name: "To Do", tasks: [] };
+          normalizedFolders.unshift(defaultFolder);
+        }
+
+        return {
+          background: typeof source.background === "string" ? source.background : DEFAULT_THEME,
+          appTitle: typeof source.appTitle === "string" && source.appTitle.trim() ? source.appTitle.trim() :
+            (typeof source.title === "string" && source.title.trim() ? source.title.trim() : "To Do List"),
+          folders: normalizedFolders
+        };
+      }
+
+      function notify(message) {
+        elements.toast.textContent = message;
+        elements.toast.hidden = false;
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => { elements.toast.hidden = true; }, 3200);
+      }
+
+      function saveData() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.appData));
+          return true;
+        } catch (error) {
+          console.error("Could not save todo data.", error);
+          notify("Could not save changes in this browser. Check available storage and try again.");
+          return false;
+        }
+      }
+
+      function activeFolder() {
+        return state.appData.folders.find((folder) => folder.id === state.currentFolderId) || state.appData.folders[0];
+      }
+
+      function applyTheme() {
+        document.documentElement.style.setProperty("--page", state.appData.background);
+        document.querySelectorAll("[data-theme]").forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.theme === state.appData.background));
+        });
+      }
+
+      function renderFolders() {
+        elements.folderList.replaceChildren();
+        state.appData.folders.forEach((folder) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "folder-button";
+          button.setAttribute("aria-current", String(folder.id === state.currentFolderId ? "page" : "false"));
+          const icon = document.createElement("span");
+          icon.className = "folder-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = "▱";
+          const name = document.createElement("span");
+          name.className = "folder-name";
+          name.textContent = folder.name;
+          const count = document.createElement("span");
+          count.className = "folder-count";
+          count.textContent = String(folder.tasks.filter((task) => !task.checked).length);
+          button.append(icon, name, count);
+          button.addEventListener("click", () => {
+            state.currentFolderId = folder.id;
+            render();
+            elements.taskTitle.focus();
+          });
+          elements.folderList.append(button);
+        });
+
+        const addButton = document.createElement("button");
+        addButton.type = "button";
+        addButton.className = "new-folder-button";
+        addButton.innerHTML = '<span class="folder-icon" aria-hidden="true">＋</span><span>New list</span>';
+        addButton.addEventListener("click", () => {
+          elements.folderName.value = "";
+          elements.folderDialog.showModal();
+          elements.folderName.focus();
+        });
+        elements.folderList.append(addButton);
+      }
+
+      function createTaskCard(task, folder) {
+        const item = document.createElement("li");
+        item.className = "task-card" + (task.checked ? " is-complete" : "");
+
+        const checkbox = document.createElement("input");
+        checkbox.className = "task-check";
+        checkbox.type = "checkbox";
+        checkbox.checked = task.checked;
+        checkbox.setAttribute("aria-label", "Mark " + task.title + (task.checked ? " active" : " complete"));
+        checkbox.addEventListener("change", () => {
+          task.checked = checkbox.checked;
+          saveData();
+          render();
+        });
+
+        const content = document.createElement("div");
+        content.className = "task-content";
+        const title = document.createElement("p");
+        title.className = "task-title";
+        title.textContent = task.title;
+        content.append(title);
+        if (task.description) {
+          const preview = document.createElement("p");
+          preview.className = "task-description-preview";
+          preview.textContent = task.description;
+          content.append(preview);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "task-actions";
+        if (task.description) {
+          const detailsButton = document.createElement("button");
+          detailsButton.type = "button";
+          detailsButton.className = "icon-button";
+          detailsButton.textContent = "⌕";
+          detailsButton.setAttribute("aria-label", "View notes for " + task.title);
+          detailsButton.addEventListener("click", () => {
+            elements.descriptionTitle.textContent = task.title;
+            elements.descriptionCopy.textContent = task.description;
+            elements.descriptionDialog.showModal();
+          });
+          actions.append(detailsButton);
+        }
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "icon-button delete";
+        deleteButton.textContent = "×";
+        deleteButton.setAttribute("aria-label", "Delete " + task.title);
+        deleteButton.addEventListener("click", () => {
+          folder.tasks = folder.tasks.filter((entry) => entry.id !== task.id);
+          saveData();
+          render();
+          notify("Task deleted.");
+        });
+        actions.append(deleteButton);
+        item.append(checkbox, content, actions);
+        return item;
+      }
+
+      function renderTasks() {
+        const folder = activeFolder();
+        if (!folder) return;
+        const remaining = folder.tasks.filter((task) => !task.checked).length;
+        elements.summary.textContent = remaining === 1 ? "1 task left" : remaining + " tasks left";
+        elements.taskList.replaceChildren();
+
+        const visibleTasks = folder.tasks.filter((task) => {
+          const matchesFilter = state.filter === "all" ||
+            (state.filter === "active" && !task.checked) ||
+            (state.filter === "completed" && task.checked);
+          const query = state.search.trim().toLocaleLowerCase();
+          const matchesSearch = !query ||
+            task.title.toLocaleLowerCase().includes(query) ||
+            task.description.toLocaleLowerCase().includes(query);
+          return matchesFilter && matchesSearch;
+        });
+
+        visibleTasks.forEach((task) => elements.taskList.append(createTaskCard(task, folder)));
+        elements.emptyState.hidden = visibleTasks.length > 0;
+        if (!visibleTasks.length) {
+          const hasTasks = folder.tasks.length > 0;
+          elements.emptyTitle.textContent = state.search ? "No matching tasks" :
+            (state.filter !== "all" && hasTasks ? "Nothing to show here" : "A clear start");
+          elements.emptyCopy.textContent = state.search ? "Try a different search." :
+            (state.filter !== "all" && hasTasks ? "Choose another filter to see your tasks." : "Add a task below to get things moving.");
+        }
+      }
+
+      function render() {
+		const folder = activeFolder();
+		if (!folder) return;
+		state.currentFolderId = folder.id;
+		elements.brandTitle.textContent = 'TASK BOARD';
+		document.title = 'TASK BOARD by Kevs World';
+		elements.listTitle.textContent = folder.name;
+		renderFolders();
+		renderTasks();
+		applyTheme();
+		document.querySelectorAll("[data-filter]").forEach((button) => {
+			button.setAttribute("aria-pressed", String(button.dataset.filter === state.filter));
+		});
+		}
+
+      function loadData() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          state.appData = normalizeData(saved ? JSON.parse(saved) : null);
+          state.currentFolderId = state.appData.folders[0].id;
+          if (!saved) saveData();
+        } catch (error) {
+          console.error("Could not load todo data.", error);
+          state.appData = normalizeData(null);
+          state.currentFolderId = state.appData.folders[0].id;
+          notify("Saved data could not be read. A fresh task list has been opened.");
+        }
+      }
+
+      elements.taskForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const title = elements.taskTitle.value.trim();
+        if (!title) {
+          elements.taskTitle.focus();
+          return;
+        }
+        const folder = activeFolder();
+        folder.tasks.unshift({
+          id: makeId(),
+          title,
+          description: elements.taskDescription.value.trim(),
+          checked: false
+        });
+        saveData();
+        elements.taskForm.reset();
+        state.filter = "all";
+        state.search = "";
+        elements.search.value = "";
+        render();
+        elements.taskTitle.focus();
+      });
+
+      elements.folderForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const name = elements.folderName.value.trim();
+        if (!name) return;
+        if (state.appData.folders.some((folder) => folder.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+          notify("A list with that name already exists.");
+          elements.folderName.focus();
+          return;
+        }
+        const folder = { id: makeId(), name, tasks: [] };
+        state.appData.folders.push(folder);
+        state.currentFolderId = folder.id;
+        saveData();
+        elements.folderDialog.close();
+        render();
+      });
+
+      elements.settingsOpen = document.getElementById("settings-open");
+      elements.settingsOpen.addEventListener("click", () => {
+        elements.settingsDialog.showModal();
+      });
+      elements.settingsForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        
+        saveData();
+        elements.settingsDialog.close();
+
+        notify("Settings saved.");
+      });
+
+      document.getElementById("theme-list").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-theme]");
+        if (!button) return;
+        state.appData.background = button.dataset.theme;
+        applyTheme();
+        saveData();
+      });
+
+      document.getElementById("clear-open").addEventListener("click", () => elements.clearDialog.showModal());
+      document.getElementById("clear-confirm").addEventListener("click", () => {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (error) {
+          console.error("Could not clear todo data.", error);
+          notify("Could not clear saved data in this browser.");
+          return;
+        }
+        state.appData = normalizeData(null);
+        state.currentFolderId = state.appData.folders[0].id;
+        saveData();
+        state.filter = "all";
+        state.search = "";
+        elements.search.value = "";
+        elements.clearDialog.close();
+        render();
+        notify("This app's saved data has been cleared.");
+      });
+
+      document.querySelectorAll("[data-close]").forEach((button) => {
+        button.addEventListener("click", () => document.getElementById(button.dataset.close).close());
+      });
+
+      elements.search.addEventListener("input", () => {
+        state.search = elements.search.value;
+        renderTasks();
+      });
+
+      document.querySelectorAll("[data-filter]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.filter = button.dataset.filter;
+          render();
+        });
+      });
+
+      loadData();
+      render();
+    })();
+  </script>
+</body>
+</html>
